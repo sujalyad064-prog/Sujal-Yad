@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#f5f6f2">
+	<title>Chatter — conversations, made simple</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			color-scheme: light;
+			--ink: #202824;
+			--muted: #7c8982;
+			--line: #e9ede8;
+			--paper: #ffffff;
+			--canvas: #f5f6f2;
+			--green: #176c52;
+			--green-dark: #12533f;
+			--mint: #e9f5ef;
+			--coral: #e87861;
+			--shadow: 0 18px 55px rgba(37, 58, 47, .09);
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			padding: 28px;
+			color: var(--ink);
+			background:
+				radial-gradient(ellipse at 12% 10%, rgba(223, 239, 229, .8), transparent 30%),
+				radial-gradient(ellipse at 91% 92%, rgba(250, 227, 217, .62), transparent 27%),
+				var(--canvas);
+			font-family: "DM Sans", sans-serif;
+		}
+
+		button, input { font: inherit; }
+		button { color: inherit; }
+		.app {
+			display: grid;
+			grid-template-columns: 72px 360px minmax(0, 1fr);
+			width: min(1440px, 100%);
+			height: min(850px, calc(100vh - 56px));
+			min-height: 560px;
+			margin: auto;
+			overflow: hidden;
+			background: var(--paper);
+			border: 1px solid rgba(31, 53, 41, .08);
+			border-radius: 16px;
+			box-shadow: var(--shadow);
+		}
+
+		.rail {
+			display: flex;
+			align-items: center;
+			flex-direction: column;
+			gap: 14px;
+			padding: 20px 0;
+			color: #aab5af;
+			background: #183e32;
+		}
+		.brand-mark {
+			display: grid;
+			width: 40px;
+			height: 40px;
+			margin-bottom: 30px;
+			place-items: center;
+			color: white;
+			background: var(--coral);
+			border-radius: 13px;
+			font: 800 17px "Manrope", sans-serif;
+			letter-spacing: 0;
+		}
+		.rail-button {
+			position: relative;
+			display: grid;
+			width: 42px;
+			height: 42px;
+			place-items: center;
+			color: inherit;
+			background: transparent;
+			border: 0;
+			border-radius: 12px;
+			cursor: pointer;
+			font-size: 19px;
+			transition: background .18s ease, color .18s ease;
+		}
+		.rail-button:hover, .rail-button.active { color: white; background: rgba(255, 255, 255, .13); }
+		.rail-button.active::before {
+			position: absolute;
+			left: -15px;
+			width: 3px;
+			height: 22px;
+			background: #f18b74;
+			border-radius: 0 3px 3px 0;
+			content: "";
+		}
+		.rail-spacer { flex: 1; }
+		.rail-avatar { width: 34px; height: 34px; border: 2px solid rgba(255,255,255,.35); }
+
+		.inbox {
+			display: flex;
+			min-width: 0;
+			flex-direction: column;
+			border-right: 1px solid var(--line);
+		}
+		.inbox-header { padding: 26px 22px 18px; }
+		.eyebrow {
+			margin: 0 0 4px;
+			color: var(--green);
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 1.2px;
+			text-transform: uppercase;
+		}
+		h1, h2, p { margin-top: 0; }
+		h1 { margin-bottom: 20px; font: 800 25px "Manrope", sans-serif; letter-spacing: 0; }
+		.search-wrap { position: relative; }
+		.search-icon { position: absolute; top: 11px; left: 13px; color: #97a39c; font-size: 17px; }
+		.search {
+			width: 100%;
+			height: 40px;
+			padding: 0 14px 0 38px;
+			color: var(--ink);
+			background: #f4f6f3;
+			border: 1px solid transparent;
+			border-radius: 9px;
+			outline: none;
+			font-size: 13px;
+			transition: border-color .18s ease, background .18s ease;
+		}
+		.search:focus { background: white; border-color: #9cc9b4; }
+		.inbox-tabs { display: flex; gap: 20px; padding: 0 22px 12px; border-bottom: 1px solid var(--line); }
+		.tab {
+			position: relative;
+			padding: 0 0 9px;
+			color: #8a958e;
+			background: none;
+			border: 0;
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: 600;
+		}
+		.tab.active { color: var(--green); }
+		.tab.active::after { position: absolute; right: 0; bottom: -13px; left: 0; height: 2px; background: var(--green); content: ""; }
+		.chat-list { overflow-y: auto; padding: 8px 10px; }
+		.chat-item {
+			display: flex;
+			width: 100%;
+			align-items: center;
+			gap: 12px;
+			padding: 12px;
+			text-align: left;
+			background: transparent;
+			border: 0;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: background .16s ease, transform .16s ease;
+		}
+		.chat-item:hover { background: #f7f9f6; }
+		.chat-item.active { background: #edf5f0; }
+		.avatar {
+			position: relative;
+			display: grid;
+			width: 46px;
+			height: 46px;
+			flex: 0 0 auto;
+			place-items: center;
+			color: #285641;
+			background: #d8eadf;
+			border-radius: 50%;
+			font: 700 13px "Manrope", sans-serif;
+		}
+		.avatar.coral { color: #864d41; background: #f5ddd5; }
+		.avatar.blue { color: #425e71; background: #dce9ef; }
+		.avatar.yellow { color: #796339; background: #f2e9c9; }
+		.avatar.purple { color: #685477; background: #e9dff0; }
+		.online-dot { position: absolute; right: 0; bottom: 1px; width: 11px; height: 11px; background: #5bbf87; border: 2px solid white; border-radius: 50%; }
+		.chat-copy { min-width: 0; flex: 1; }
+		.chat-topline, .chat-bottomline { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+		.chat-name { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+		.chat-time { flex: 0 0 auto; color: #9aa49e; font-size: 10px; }
+		.chat-preview { overflow: hidden; margin: 4px 0 0; color: #87928b; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+		.unread { display: grid; min-width: 18px; height: 18px; padding: 0 5px; place-items: center; color: white; background: var(--green); border-radius: 10px; font-size: 10px; font-weight: 700; }
+		.empty-list { padding: 26px 18px; color: var(--muted); text-align: center; font-size: 13px; }
+
+		.conversation { display: flex; min-width: 0; flex-direction: column; background: #fbfcfa; }
+		.conversation-header {
+			display: flex;
+			min-height: 78px;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 14px 25px;
+			background: white;
+			border-bottom: 1px solid var(--line);
+		}
+		.person { display: flex; min-width: 0; align-items: center; gap: 12px; }
+		.person .avatar { width: 42px; height: 42px; }
+		.person-name { margin: 0 0 3px; overflow: hidden; font: 700 14px "Manrope", sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+		.person-status { margin: 0; color: #8b9890; font-size: 11px; }
+		.person-status.online { color: #3d9e6d; }
+		.header-actions { display: flex; gap: 6px; }
+		.icon-button {
+			display: grid;
+			width: 36px;
+			height: 36px;
+			place-items: center;
+			color: #728078;
+			background: transparent;
+			border: 0;
+			border-radius: 9px;
+			cursor: pointer;
+			font-size: 17px;
+		}
+		.icon-button:hover { color: var(--green); background: #f1f5f2; }
+		.message-area {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			gap: 13px;
+			overflow-y: auto;
+			padding: 26px clamp(18px, 5vw, 70px) 20px;
+			background-color: #fbfcfa;
+			background-image: radial-gradient(rgba(35, 91, 65, .035) .8px, transparent .8px);
+			background-size: 18px 18px;
+		}
+		.day-label { align-self: center; margin: 2px 0 8px; padding: 6px 11px; color: #78867e; background: rgba(255,255,255,.88); border: 1px solid #eef1ed; border-radius: 20px; font-size: 10px; }
+		.message { display: flex; max-width: min(76%, 480px); flex-direction: column; align-self: flex-start; animation: arrive .24s ease both; }
+		.message.mine { align-self: flex-end; }
+		.bubble { padding: 11px 13px 8px; color: #35413a; background: white; border: 1px solid #edf0ec; border-radius: 3px 12px 12px 12px; box-shadow: 0 2px 5px rgba(29, 52, 39, .025); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+		.mine .bubble { color: #254b39; background: #e3f2e8; border-color: #deeee3; border-radius: 12px 3px 12px 12px; }
+		.message-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 4px; color: #9aa69e; font-size: 9px; }
+		.checks { color: #4b9a76; font-size: 12px; }
+		.typing { display: none; align-self: flex-start; padding: 12px 14px; color: #88948c; background: white; border: 1px solid var(--line); border-radius: 12px; font-size: 11px; }
+		.typing.show { display: block; }
+		.composer-wrap { padding: 12px 25px 19px; background: #fbfcfa; }
+		.composer {
+			display: flex;
+			min-height: 52px;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 8px 6px 14px;
+			background: white;
+			border: 1px solid #e8ede8;
+			border-radius: 12px;
+			box-shadow: 0 4px 14px rgba(32, 53, 41, .035);
+		}
+		.composer input { min-width: 0; flex: 1; padding: 9px 0; color: var(--ink); background: transparent; border: 0; outline: none; font-size: 13px; }
+		.composer input::placeholder { color: #a3ada6; }
+		.send-button {
+			display: grid;
+			width: 38px;
+			height: 38px;
+			flex: 0 0 auto;
+			place-items: center;
+			color: white;
+			background: var(--green);
+			border: 0;
+			border-radius: 10px;
+			cursor: pointer;
+			font-size: 16px;
+			transition: background .18s ease, transform .18s ease;
+		}
+		.send-button:hover { background: var(--green-dark); transform: translateY(-1px); }
+		.composer-hint { margin: 7px 0 0 5px; color: #a0aaa3; font-size: 10px; }
+		.mobile-back { display: none; }
+		@keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+		@media (max-width: 900px) {
+			body { padding: 14px; }
+			.app { grid-template-columns: 60px 310px minmax(0, 1fr); height: calc(100vh - 28px); }
+		}
+		@media (max-width: 680px) {
+			body { padding: 0; background: white; }
+			.app { position: relative; display: block; width: 100%; height: 100dvh; min-height: 0; border: 0; border-radius: 0; }
+			.rail { display: none; }
+			.inbox, .conversation { position: absolute; inset: 0; transition: transform .24s ease; }
+			.inbox { z-index: 2; border: 0; }
+			.inbox-header { padding: 25px 20px 17px; }
+			.conversation { z-index: 1; transform: translateX(100%); }
+			.app.show-conversation .conversation { z-index: 3; transform: translateX(0); }
+			.app.show-conversation .inbox { transform: translateX(-18%); }
+			.conversation-header { min-height: 70px; padding: 12px 15px; }
+			.mobile-back { display: grid; width: 32px; height: 36px; place-items: center; color: var(--green); background: transparent; border: 0; cursor: pointer; font-size: 20px; }
+			.person { flex: 1; }
+			.header-actions { gap: 0; }
+			.message-area { padding: 20px 15px; }
+			.message { max-width: 84%; }
+			.composer-wrap { padding: 10px 12px max(12px, env(safe-area-inset-bottom)); }
+			.composer-hint { display: none; }
+		}
+		@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+	</style>
+</head>
+<body>
+	<main class="app" id="app">
+		<nav class="rail" aria-label="Main navigation">
+			<div class="brand-mark" aria-label="Chatter">c.</div>
+			<button class="rail-button active" aria-label="Chats" title="Chats">▤</button>
+			<button class="rail-button" aria-label="Updates" title="Updates">◉</button>
+			<button class="rail-button" aria-label="Calls" title="Calls">⌕</button>
+			<div class="rail-spacer"></div>
+			<button class="rail-button" aria-label="Settings" title="Settings">⚙</button>
+			<div class="avatar rail-avatar">AK</div>
+		</nav>
+
+		<aside class="inbox" aria-label="Conversations">
+			<header class="inbox-header">
+				<p class="eyebrow">Your people, your space</p>
+				<h1>Messages</h1>
+				<label class="search-wrap">
+					<span class="search-icon" aria-hidden="true">⌕</span>
+					<input class="search" id="search" type="search" placeholder="Search conversations" aria-label="Search conversations">
+				</label>
+			</header>
+			<div class="inbox-tabs" role="tablist" aria-label="Conversation filter">
+				<button class="tab active" data-filter="all" role="tab" aria-selected="true">All chats</button>
+				<button class="tab" data-filter="unread" role="tab" aria-selected="false">Unread</button>
+				<button class="tab" data-filter="groups" role="tab" aria-selected="false">Groups</button>
+			</div>
+			<div class="chat-list" id="chat-list"></div>
+		</aside>
+
+		<section class="conversation" aria-label="Open conversation">
+			<header class="conversation-header">
+				<button class="mobile-back" id="back-button" aria-label="Back to conversations">‹</button>
+				<div class="person">
+					<div class="avatar" id="active-avatar">RM<span class="online-dot"></span></div>
+					<div>
+						<h2 class="person-name" id="active-name">Riya Mehta</h2>
+						<p class="person-status online" id="active-status">online now</p>
+					</div>
+				</div>
+				<div class="header-actions">
+					<button class="icon-button" aria-label="Search in conversation" title="Search in conversation">⌕</button>
+					<button class="icon-button" aria-label="More options" title="More options">•••</button>
+				</div>
+			</header>
+			<div class="message-area" id="message-area" aria-live="polite"></div>
+			<div class="composer-wrap">
+				<form class="composer" id="message-form">
+					<button class="icon-button" type="button" aria-label="Add attachment" title="Add attachment">＋</button>
+					<input id="message-input" autocomplete="off" placeholder="Write a message..." aria-label="Write a message">
+					<button class="icon-button" type="button" aria-label="Add emoji" title="Add emoji">☺</button>
+					<button class="send-button" type="submit" aria-label="Send message" title="Send message">➤</button>
+				</form>
+				<p class="composer-hint">Press Enter to send</p>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		let conversations = [];
+		const app = document.querySelector("#app");
+		const list = document.querySelector("#chat-list");
+		const messageArea = document.querySelector("#message-area");
+		const search = document.querySelector("#search");
+		const messageInput = document.querySelector("#message-input");
+		const composerHint = document.querySelector(".composer-hint");
+		let activeId = null;
+		let filter = "all";
+
+		async function api(path, options) {
+			const response = await fetch(`/api${path}`, {
+				headers: { "Content-Type": "application/json" },
+				...options
+			});
+			const result = await response.json();
+			if (!response.ok) throw new Error(result.error || "The request could not be completed.");
+			return result;
+		}
+
+		function showError(error) {
+			composerHint.textContent = error.message;
+			composerHint.setAttribute("role", "alert");
+		}
+
+		function currentConversation() {
+			return conversations.find((conversation) => conversation.id === activeId);
+		}
+
+		function renderList() {
+			const query = search.value.trim().toLowerCase();
+			const visible = conversations.filter((conversation) => {
+				const matchesQuery = `${conversation.name} ${conversation.preview}`.toLowerCase().includes(query);
+				const matchesFilter = filter === "all" || (filter === "unread" && conversation.unread > 0) || (filter === "groups" && conversation.group);
+				return matchesQuery && matchesFilter;
+			});
+			list.innerHTML = visible.length ? visible.map((conversation) => `
+				<button class="chat-item ${conversation.id === activeId ? "active" : ""}" data-id="${conversation.id}" aria-label="Open chat with ${escapeHtml(conversation.name)}">
+					<span class="avatar ${escapeHtml(conversation.color)}">${escapeHtml(conversation.initials)}${conversation.online ? '<i class="online-dot"></i>' : ""}</span>
+					<span class="chat-copy">
+						<span class="chat-topline"><span class="chat-name">${escapeHtml(conversation.name)}</span><span class="chat-time">${escapeHtml(conversation.time)}</span></span>
+						<span class="chat-bottomline"><span class="chat-preview">${escapeHtml(conversation.preview)}</span>${conversation.unread ? `<span class="unread">${conversation.unread}</span>` : ""}</span>
+					</span>
+				</button>`).join("") : '<p class="empty-list">No conversations found</p>';
+			list.querySelectorAll(".chat-item").forEach((item) => item.addEventListener("click", () => openConversation(Number(item.dataset.id))));
+		}
+
+		function renderMessages() {
+			const conversation = currentConversation();
+			if (!conversation) return;
+			messageArea.innerHTML = `<p class="day-label">TODAY</p>${conversation.messages.map((message) => `
+				<article class="message ${message.mine ? "mine" : ""}">
+					<div class="bubble">${escapeHtml(message.text)}</div>
+					<div class="message-meta"><span>${escapeHtml(message.time)}</span>${message.mine ? '<span class="checks" aria-label="Delivered">✓✓</span>' : ""}</div>
+				</article>`).join("")}`;
+			messageArea.scrollTop = messageArea.scrollHeight;
+		}
+
+		async function openConversation(id) {
+			activeId = id;
+			const conversation = currentConversation();
+			if (!conversation) return;
+			conversation.unread = 0;
+			document.querySelector("#active-name").textContent = conversation.name;
+			document.querySelector("#active-status").textContent = conversation.online ? "online now" : conversation.group ? "Group conversation" : "last seen recently";
+			document.querySelector("#active-status").classList.toggle("online", conversation.online);
+			const avatar = document.querySelector("#active-avatar");
+			avatar.className = `avatar ${conversation.color}`;
+			avatar.textContent = conversation.initials;
+			if (conversation.online) avatar.insertAdjacentHTML("beforeend", '<span class="online-dot"></span>');
+			renderList();
+			renderMessages();
+			app.classList.add("show-conversation");
+		}
+
+		function escapeHtml(value) {
+			return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+		}
+
+		document.querySelector("#message-form").addEventListener("submit", async (event) => {
+			event.preventDefault();
+			const text = messageInput.value.trim();
+			if (!text) return;
+			const conversation = currentConversation();
+			if (!conversation) return;
+			const sendButton = document.querySelector(".send-button");
+			sendButton.disabled = true;
+			composerHint.textContent = "Sending...";
+			composerHint.removeAttribute("role");
+			try {
+				const message = await api(`/conversations/${conversation.id}/messages`, {
+					method: "POST",
+					body: JSON.stringify({ text })
+				});
+				conversation.messages.push(message);
+				conversation.preview = message.text;
+				conversation.time = message.time;
+				messageInput.value = "";
+				composerHint.textContent = "Press Enter to send";
+				renderMessages();
+				renderList();
+				messageInput.focus();
+			} catch (error) {
+				showError(error);
+			} finally {
+				sendButton.disabled = false;
+			}
+		});
+
+		search.addEventListener("input", renderList);
+		document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => {
+			document.querySelectorAll(".tab").forEach((item) => {
+				const selected = item === tab;
+				item.classList.toggle("active", selected);
+				item.setAttribute("aria-selected", String(selected));
+			});
+			filter = tab.dataset.filter;
+			renderList();
+		}));
+		document.querySelector("#back-button").addEventListener("click", () => app.classList.remove("show-conversation"));
+
+		async function startApp() {
+			try {
+				conversations = await api("/conversations");
+				renderList();
+				if (conversations.length) await openConversation(conversations[0].id);
+				else {
+					messageArea.innerHTML = '<p class="empty-list">No conversations yet.</p>';
+					composerHint.textContent = "Your conversations will appear here.";
+				}
+			} catch (error) {
+				showError(new Error(`Could not connect to the backend: ${error.message}`));
+				list.innerHTML = '<p class="empty-list">Could not load conversations. Start the backend and refresh.</p>';
+				messageArea.innerHTML = "";
+			}
+		}
+
+		startApp();
+	</script>
+</body>
+</html>
